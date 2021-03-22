@@ -6,6 +6,7 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 import math
 import numpy as np
+from models.settings import *
 
 def convbn(in_planes, out_planes, kernel_size, stride, pad, dilation):
 
@@ -48,15 +49,24 @@ class matchshifted(nn.Module):
 
     def forward(self, left, right, shift):
         batch, filters, height, width = left.size()
-        shifted_left  = F.pad(torch.index_select(left,  3, Variable(torch.LongTensor([i for i in range(shift,width)])).cuda()),(shift,0,0,0))
-        shifted_right = F.pad(torch.index_select(right, 3, Variable(torch.LongTensor([i for i in range(width-shift)])).cuda()),(shift,0,0,0))
+        
+        if(Settings.enabled_cuda):
+            shifted_left  = F.pad(torch.index_select(left,  3, Variable(torch.LongTensor([i for i in range(shift,width)])).cuda()),(shift,0,0,0))
+            shifted_right = F.pad(torch.index_select(right, 3, Variable(torch.LongTensor([i for i in range(width-shift)])).cuda()),(shift,0,0,0))
+        else:
+            shifted_left  = F.pad(torch.index_select(left,  3, Variable(torch.LongTensor([i for i in range(shift,width)]))),(shift,0,0,0))
+            shifted_right = F.pad(torch.index_select(right, 3, Variable(torch.LongTensor([i for i in range(width-shift)]))),(shift,0,0,0))            
+                  
         out = torch.cat((shifted_left,shifted_right),1).view(batch,filters*2,1,height,width)
         return out
 
 class disparityregression(nn.Module):
     def __init__(self, maxdisp):
         super(disparityregression, self).__init__()
-        self.disp = Variable(torch.Tensor(np.reshape(np.array(range(maxdisp)),[1,maxdisp,1,1])).cuda(), requires_grad=False)
+        if(Settings.enabled_cuda):
+            self.disp = Variable(torch.Tensor(np.reshape(np.array(range(maxdisp)),[1,maxdisp,1,1])).cuda(), requires_grad=False)
+        else:
+            self.disp = Variable(torch.Tensor(np.reshape(np.array(range(maxdisp)),[1,maxdisp,1,1])), requires_grad=False)            
 
     def forward(self, x):
         disp = self.disp.repeat(x.size()[0],1,x.size()[2],x.size()[3])

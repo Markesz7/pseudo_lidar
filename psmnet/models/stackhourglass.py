@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 from models.submodule import *
+from models.settings import *
 import torch
 import torch.nn as nn
 import torch.utils.data
@@ -111,12 +112,13 @@ class PSMNet(nn.Module):
         refimg_fea = self.feature_extraction(left)
         targetimg_fea = self.feature_extraction(right)
         
-        int_tuple = int (self.maxdisp / 4)  # Converintg tuple result into integer
+        int_tuple = int (self.maxdisp / 4)  # Converting tuple result into integer
 
         # matching
-        cost = Variable(
-            torch.FloatTensor(refimg_fea.size()[0], refimg_fea.size()[1] * 2, int_tuple, refimg_fea.size()[2],
-                              refimg_fea.size()[3]).zero_()).cuda()
+        if(Settings.enabled_cuda):
+            cost = Variable(torch.FloatTensor(refimg_fea.size()[0], refimg_fea.size()[1] * 2, int_tuple, refimg_fea.size()[2], refimg_fea.size()[3]).zero_()).cuda()
+        else:
+            cost = Variable(torch.FloatTensor(refimg_fea.size()[0], refimg_fea.size()[1] * 2, int_tuple, refimg_fea.size()[2], refimg_fea.size()[3]).zero_())            
 
         for i in range(int_tuple):
             if i > 0:

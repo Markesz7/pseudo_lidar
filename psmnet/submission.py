@@ -18,6 +18,7 @@ import time
 import math
 from utils import preprocess 
 from models import *
+from models.settings import *
 
 # 2012 data /media/jiaren/ImageNet/data_scene_flow_2012/testing/
 
@@ -45,7 +46,8 @@ args.cuda = not args.no_cuda and torch.cuda.is_available()
 torch.manual_seed(args.seed)
 if args.cuda:
     torch.cuda.manual_seed(args.seed)
-
+    Settings.enabled_cuda = True
+    
 if args.KITTI == '2015':
    from dataloader import KITTI_submission_loader as DA
 else:
@@ -61,11 +63,18 @@ elif args.model == 'basic':
 else:
     print('no model')
 
-model = nn.DataParallel(model, device_ids=[0])
-model.cuda()
+if args.cuda:
+    model = nn.DataParallel(model, device_ids=[0])
+    model.cuda()
+else:
+    model = nn.DataParallel(model)
+    model.to("cpu")
 
 if args.loadmodel is not None:
-    state_dict = torch.load(args.loadmodel)
+    if args.cuda:
+        state_dict = torch.load(args.loadmodel)
+    else:
+        state_dict = torch.load(args.loadmodel, map_location=torch.device('cpu'))
     model.load_state_dict(state_dict['state_dict'])
 
 print('Number of model parameters: {}'.format(sum([p.data.nelement() for p in model.parameters()])))
@@ -75,7 +84,10 @@ def test(imgL,imgR):
 
         if args.cuda:
            imgL = torch.FloatTensor(imgL).cuda()
-           imgR = torch.FloatTensor(imgR).cuda()     
+           imgR = torch.FloatTensor(imgR).cuda()
+        else:
+           imgL = torch.FloatTensor(imgL)
+           imgR = torch.FloatTensor(imgR)
 
         imgL, imgR= Variable(imgL), Variable(imgR)
 
