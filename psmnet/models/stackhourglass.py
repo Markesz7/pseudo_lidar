@@ -6,7 +6,6 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 import math
 from .submodule import *
-from models.settings import *
 
 class hourglass(nn.Module):
     def __init__(self, inplanes):
@@ -106,11 +105,9 @@ class PSMNet(nn.Module):
         refimg_fea     = self.feature_extraction(left)
         targetimg_fea  = self.feature_extraction(right)
 
+
         #matching
-        if(Settings.enabled_cuda):
-            cost = Variable(torch.FloatTensor(refimg_fea.size()[0], refimg_fea.size()[1]*2, self.maxdisp//4,  refimg_fea.size()[2],  refimg_fea.size()[3]).zero_()).cuda()
-        else:
-            cost = Variable(torch.FloatTensor(refimg_fea.size()[0], refimg_fea.size()[1]*2, self.maxdisp//4,  refimg_fea.size()[2],  refimg_fea.size()[3]).zero_())
+        cost = Variable(torch.FloatTensor(refimg_fea.size()[0], refimg_fea.size()[1]*2, self.maxdisp//4,  refimg_fea.size()[2],  refimg_fea.size()[3]).zero_()).cuda()
 
         for i in range(self.maxdisp//4):
             if i > 0 :

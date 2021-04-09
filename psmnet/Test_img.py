@@ -10,7 +10,6 @@ import numpy as np
 import time
 import math
 from models import *
-from models.settings import *
 import cv2
 from PIL import Image
 
@@ -41,7 +40,6 @@ args.cuda = not args.no_cuda and torch.cuda.is_available()
 torch.manual_seed(args.seed)
 if args.cuda:
     torch.cuda.manual_seed(args.seed)
-    Settings.enabled_cuda = True
 
 if args.model == 'stackhourglass':
     model = stackhourglass(args.maxdisp)
@@ -50,19 +48,12 @@ elif args.model == 'basic':
 else:
     print('no model')
 
-if args.cuda:
-    model = nn.DataParallel(model, device_ids=[0])
-    model.cuda()
-else:
-    model = nn.DataParallel(model)
-    model.to("cpu")
+model = nn.DataParallel(model, device_ids=[0])
+model.cuda()
 
 if args.loadmodel is not None:
     print('load PSMNet')
-    if args.cuda:
-        state_dict = torch.load(args.loadmodel)
-    else:
-        state_dict = torch.load(args.loadmodel, map_location=torch.device('cpu'))
+    state_dict = torch.load(args.loadmodel)
     model.load_state_dict(state_dict['state_dict'])
 
 print('Number of model parameters: {}'.format(sum([p.data.nelement() for p in model.parameters()])))
